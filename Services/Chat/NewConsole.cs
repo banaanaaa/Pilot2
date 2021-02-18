@@ -120,5 +120,12 @@ namespace Pilot2.Services.Chat
 			System.Console.WriteLine(text);
 			System.Console.ResetColor();
 		}
+
+		public void WriteError(string text)
+        {
+			System.Console.ForegroundColor = ConsoleColor.Red;
+			System.Console.WriteLine(text);
+			System.Console.ResetColor();
+        }
 	}
 }

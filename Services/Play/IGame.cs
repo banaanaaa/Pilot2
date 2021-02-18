@@ -12,7 +12,7 @@ namespace Pilot2.Services.Play
         bool InitPlayers(int count);
         bool PlayerIsExist(string compare);
         void AddPlayer(Player player);
-        void ExecuteRound();
+        void Play();
         void StartGame();
         void StopGame();
     }

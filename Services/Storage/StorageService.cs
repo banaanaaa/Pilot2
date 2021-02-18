@@ -37,23 +37,37 @@ namespace Pilot2.Services.Storage
 
 		private void Save(IEnumerable<GameResultItem> gameResultItems)
 		{
-			using StreamWriter file = File.AppendText(_storagePath);
+			/*using (StreamWriter sw = new StreamWriter(_storagePath))
+            using (JsonWriter writer = new JsonTextWriter(sw))
+            {
+                JsonSerializer serializer = new JsonSerializer();
+                serializer.Serialize(writer, gameResultItems);
+            }*/
 
-			var settings = new JsonSerializerSettings() { Formatting = Formatting.Indented };
 
-			string data = JsonConvert.SerializeObject(gameResultItems, settings);
-			JsonSerializer serializer = new JsonSerializer();
-			serializer.Serialize(file, data);
-		}
+			File.WriteAllText(@_storagePath, JsonConvert.SerializeObject(gameResultItems));
+/*
+			using (StreamWriter file = File.AppendText(@_storagePath))
+			{
+				string json = JsonConvert.SerializeObject(gameResultItems, Formatting.Indented);
+				*//*var settings = new JsonSerializerSettings() { Formatting = Formatting.Indented };
 
-		private ICollection<GameResultItem> Load(Guid userid)
+				string data = JsonConvert.SerializeObject(gameResultItems, settings);*//*
+				JsonSerializer serializer = new JsonSerializer();
+				serializer.Serialize(file, json);
+			}*/
+
+
+        }
+
+        private ICollection<GameResultItem> Load(Guid userid)
 		{
 			ICollection<GameResultItem> collection;
 			if (File.Exists(_storagePath))
-			{
-				var settings = new JsonSerializerSettings() { Formatting = Formatting.Indented };
+			{/*
+				var settings = new JsonSerializerSettings() { Formatting = Formatting.Indented };*/
 
-				collection = (ICollection<GameResultItem>)JsonConvert.DeserializeObject<ICollection<GameResultItem>>(File.ReadAllText(_storagePath), settings)
+				collection = (ICollection<GameResultItem>)JsonConvert.DeserializeObject<ICollection<GameResultItem>>(File.ReadAllText(_storagePath)/*, settings*/)
 					.Select(t => t.UserId == userid);
 			}
 			else
@@ -68,10 +82,10 @@ namespace Pilot2.Services.Storage
 		{
 			ICollection<GameResultItem> collection;
 			if (File.Exists(_storagePath))
-			{
-				var settings = new JsonSerializerSettings() { Formatting = Formatting.Indented };
+            {
+                var settings = new JsonSerializerSettings() { Formatting = Formatting.Indented };
 
-				collection = JsonConvert.DeserializeObject<ICollection<GameResultItem>>(File.ReadAllText(_storagePath), settings);
+                collection = JsonConvert.DeserializeObject<ICollection<GameResultItem>>(File.ReadAllText(_storagePath), settings);
 			}
 			else
 			{
