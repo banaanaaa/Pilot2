@@ -13,6 +13,23 @@ namespace Pilot2.Services.Chat
 			{ Formating.Line, @"^[a-zA-Z0-9]+$" }
 		};
 
+		public void Write(string text) => Write(text, ConsoleColor.Cyan);
+		public void WriteLine(string text) => WriteLine(text, ConsoleColor.Cyan);
+		public void WriteLineInfo(string text) => WriteLine(text, ConsoleColor.Magenta);
+		public void WriteLineError(string text) => WriteLine(text, ConsoleColor.Red);
+		private void Write(string text, ConsoleColor color)
+		{
+			System.Console.ForegroundColor = color;
+			System.Console.Write(text);
+			System.Console.ResetColor();
+		}
+		private void WriteLine(string text, ConsoleColor color)
+		{
+			System.Console.ForegroundColor = color;
+			System.Console.WriteLine(text);
+			System.Console.ResetColor();
+		}
+
 		/// <summary>
 		/// To read line as number or regular line with blocked keys
 		/// </summary>
@@ -20,25 +37,19 @@ namespace Pilot2.Services.Chat
 		/// <returns></returns>
 		public string ReadLine(Formating format)
 		{
-			System.Console.Write(">>> ");
-
-			ConsoleKeyInfo keyInfo;
-			ConsoleKey key;
-			string keyString;
+			Write(">>> ");
 
 			bool isCommand = false;
-
 			string buf = "";
-
 			string regex = Format.GetValueOrDefault(format, @"^[a-zA-Z0-9]+$");
 			string oldRegex = regex;
 
 			bool endRead = false;
 			while (!endRead)
 			{
-				keyInfo = System.Console.ReadKey(true);
-				key = keyInfo.Key;
-				keyString = keyInfo.KeyChar.ToString();
+				var keyInfo = System.Console.ReadKey(true);
+				var key = keyInfo.Key;
+				var keyString = keyInfo.KeyChar.ToString();
 
 				string write = "";
 
@@ -66,7 +77,6 @@ namespace Pilot2.Services.Chat
 						{
 							if (buf.Length == 0)
 							{
-								System.Console.ForegroundColor = ConsoleColor.Yellow;
 								if (!regex.Contains("a-zA-Z"))
 								{
 									regex = @"^[a-zA-Z0-9]+$";
@@ -81,7 +91,6 @@ namespace Pilot2.Services.Chat
 						{
 							if (buf.Length > 0 && isCommand)
 							{
-								System.Console.ForegroundColor = ConsoleColor.Yellow;
 								buf += keyString;
 								write = keyString;
 							}
@@ -95,37 +104,27 @@ namespace Pilot2.Services.Chat
 						{
 							if (Regex.IsMatch(keyString, regex) && (buf.Length > 0 || keyString != "0"))
 							{
-								if (isCommand)
-									System.Console.ForegroundColor = ConsoleColor.Yellow;
 								buf += keyString;
 								write = keyString;
 							}
 							break;
 						}
 				}
-				if (buf.Length == 0 && isCommand)
+				if (isCommand)
 				{
-					isCommand = false;
-					regex = oldRegex;
+					Write(write, ConsoleColor.Yellow);
+					if (buf.Length == 0)
+					{
+						isCommand = false;
+						regex = oldRegex;
+					}
 				}
-				System.Console.Write(write);
-				System.Console.ResetColor();
+				else
+				{
+					Write(write);
+				}
 			}
 			return buf;
 		}
-
-		public void WriteLine(string text)
-		{
-			System.Console.ForegroundColor = ConsoleColor.Blue;
-			System.Console.WriteLine(text);
-			System.Console.ResetColor();
-		}
-
-		public void WriteError(string text)
-        {
-			System.Console.ForegroundColor = ConsoleColor.Red;
-			System.Console.WriteLine(text);
-			System.Console.ResetColor();
-        }
 	}
 }

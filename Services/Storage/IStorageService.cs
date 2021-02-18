@@ -7,7 +7,7 @@ namespace Pilot2.Services.Storage
 {
     public interface IStorageService
     {
-        public Task<ICollection<GameResultItem>> GetGameResultsAsync(Guid userid);
+        //public Task<ICollection<GameResultItem>> GetGameResultsAsync(Guid userid);
 
         /// <summary>
         /// Get game results from somewhere
@@ -22,6 +22,8 @@ namespace Pilot2.Services.Storage
         /// <returns></returns>
         public Task AddGameResultsAsync(IEnumerable<GameResultItem> gameResultItems);
 
-        public int GetScore(Guid userid);
+        public int GetScore(string name);
+
+        public ICollection<GameResultItem> GetLoadedData();
     }
 }

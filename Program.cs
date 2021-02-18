@@ -1,17 +1,16 @@
 ﻿using Pilot2.Services.Play;
 using Pilot2.Services.Storage;
-using Pilot2.Services.Chat;
-using System;
+using System.Threading.Tasks;
 
 namespace Pilot2
 {
 	class Program
 	{
-		static void Main(string[] args)
+		static async Task Main(string[] args)
 		{
-			StorageService storageService = new StorageService(@"../../gamelog.json");
+			StorageService storageService = new StorageService("../../gamelog.json");
+			storageService.LoadedData = await storageService.GetGameResultsAsync();
 			Game game = new Game(storageService);
-			NewConsole Console = new NewConsole();
 
 			int count = game.InputNumberOfPlayers();
 			

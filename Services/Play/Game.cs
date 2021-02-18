@@ -1,11 +1,11 @@
 ﻿using Pilot2.Models;
 using Pilot2.Services.Chat;
 using Pilot2.Services.Storage;
+using Pilot2.Util;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 
 namespace Pilot2.Services.Play
 {
@@ -16,11 +16,8 @@ namespace Pilot2.Services.Play
 		private string BaseWord;
 
 		private const int _minPlayersCount = 2;
-
 		private const int _minBasewordLength = 8;
-
 		private const int _maxBasewordLength = 32;
-
 		private const int _maxPlayerAttempts = 3;
 
 		private readonly ICollection<Player> _players;
@@ -44,139 +41,6 @@ namespace Pilot2.Services.Play
 			_players = new Collection<Player>();
 		}
 
-		public void Score()
-		{
-
-		}
-
-		public void ShowWords()
-		{
-
-		}
-
-		public void TotalScore()
-		{
-
-		}
-
-		private bool HandleRound(Player player)
-		{
-			bool success = false;
-			for (int attempt = 0; attempt < _maxPlayerAttempts; attempt++)
-			{
-				WriteLine($"{player.Name} [{attempt + 1}/{_maxPlayerAttempts}]");
-				var input = ReadLine(Formating.Line);
-
-				try
-                {
-					if (input.StartsWith("/"))
-					{
-						ExecuteOnCommand(input);
-					}
-					else if (BaseWordContainsAllChars(input))
-					{
-						player.Words.Add(input);
-						success = true;
-						break;
-					}
-					else
-					{
-						throw new ArgumentException("Failed. Try again");
-					}
-				}
-				catch (Exception ex)
-				{
-					WriteError($"{ex.Message}");
-					if (attempt + 1 == _maxPlayerAttempts)
-                    {
-						player.inGame = false;
-						WriteError($"{player.Name} lost");
-                    }
-				}
-			}
-			return success;
-		}
-
-		private void ExecuteOnCommand(string input)
-		{
-			if (_commands.ContainsKey(input))
-			{
-				_commands[input]();
-			}
-			else
-			{
-				throw new ArgumentException("No such command");
-			}
-		}
-
-		public void AddPlayer(Player player)
-		{
-			if (!GameActive)
-			{
-				_players.Add(player);
-			}
-			else
-			{
-				throw new ArgumentException("Game already started, cannot add new player");
-			}
-		}
-
-		public void Play()
-		{
-			if (!GameActive)
-			{
-				throw new ArgumentException("Game not started yet");
-			}
-
-			foreach (var player in _players)
-			{
-				if (player.inGame)
-				{
-					var isSuccess = HandleRound(player);
-					if (isSuccess)
-					{
-						player.Score++;
-					}
-					// if someone inGame - continue
-					else if (SomeoneInGame())
-					{
-						player.inGame = false;
-					}
-				}
-			}
-		}
-
-		public void StartGame()
-		{
-			try
-            {
-                GameActive = GameActive ? throw new ArgumentException("Game already started") : true;
-                if (_players.Count < _minPlayersCount)
-                {
-                    throw new ArgumentException("need at least 2 players to start game");
-                }
-                BaseWord = InputBaseWord(_minBasewordLength, _maxBasewordLength);
-            }
-			catch (Exception ex)
-            {
-				WriteError($"{ex.Message}");
-            }
-		}
-
-		public async void StopGame()
-		{
-			try
-            {
-				GameActive = !GameActive ? throw new ArgumentException("Game not started yet") : false;
-
-				await _storageService.AddGameResultsAsync(_players.Select(t => new GameResultItem() { UserId = t.Id, Name = t.Name, Score = t.Score }));
-			}
-			catch (Exception ex)
-			{
-				WriteError($"{ex.Message}");
-			}
-		}
-
 		public int InputNumberOfPlayers()
 		{
 			int count;
@@ -186,7 +50,7 @@ namespace Pilot2.Services.Play
 				var input = ReadLine(Formating.Number);
 
 				try
-                {
+				{
 					if (input.StartsWith("/"))
 					{
 						ExecuteOnCommand(input);
@@ -207,13 +71,11 @@ namespace Pilot2.Services.Play
 				}
 				catch (Exception ex)
 				{
-					WriteError($"{ex.Message}");
+					WriteLineError(ex.Message);
 				}
 			}
 			return count;
 		}
-
-		public bool SomeoneInGame() => _players.Any(t => t.inGame);
 
 		public bool InitPlayers(int count)
 		{
@@ -226,9 +88,9 @@ namespace Pilot2.Services.Play
 					var input = ReadLine(Formating.Line);
 
 					try
-                    {
+					{
 						if (input.StartsWith("/"))
-                        {
+						{
 							ExecuteOnCommand(input);
 						}
 						else
@@ -254,11 +116,237 @@ namespace Pilot2.Services.Play
 					}
 					catch (Exception ex)
 					{
-						WriteError($"{ex.Message}");
+						WriteLineError(ex.Message);
 					}
 				}
 			}
 			return success;
+		}
+
+		public void AddPlayer(Player player)
+		{
+			if (!GameActive)
+			{
+				_players.Add(player);
+			}
+			else
+			{
+				throw new ArgumentException("Game already started, cannot add new player");
+			}
+		}
+
+		public void Play()
+		{
+			try
+			{
+				if (!GameActive)
+				{
+					throw new ArgumentException("Game not started yet");
+				}
+
+				foreach (var player in _players)
+				{
+					if (player.inGame)
+					{
+						var isSuccess = HandleRound(player);
+						if (isSuccess)
+						{
+							player.Score++;
+						}
+						else if (SomeoneInGame())
+						{
+							player.inGame = false;
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				WriteLineError(ex.Message);
+			}
+		}
+
+		public void StartGame()
+		{
+			try
+			{
+				GameActive = GameActive ? throw new ArgumentException("Game already started") : true;
+				if (_players.Count < _minPlayersCount)
+				{
+					throw new ArgumentException("need at least 2 players to start game");
+				}
+				BaseWord = InputBaseWord(_minBasewordLength, _maxBasewordLength);
+			}
+			catch (Exception ex)
+			{
+				WriteLineError(ex.Message);
+			}
+		}
+
+		public async void StopGame()
+		{
+			try
+			{
+				GameActive = !GameActive ? throw new ArgumentException("Game not started yet") : false;
+
+				await _storageService.AddGameResultsAsync(_players.Select(t => new GameResultItem() { UserId = t.Id, UserName = t.Name, Score = t.Score }));
+
+				WriteLineInfo($"{FindWinner()} win!");
+			}
+			catch (Exception ex)
+			{
+				WriteLineError(ex.Message);
+			}
+		}
+
+		private void Score()
+		{
+			try
+			{
+				if (_players.Count == 0)
+				{
+					throw new ArgumentException("No players");
+				}
+
+				WriteLineInfo("Total score");
+				foreach (var pl in _players)
+				{
+					WriteLineInfo($"{pl.Name}\t-> {pl.Score + _storageService.GetScore(pl.Name)}");
+				}
+			}
+			catch (Exception ex)
+			{
+				WriteLineError(ex.Message);
+			}
+		}
+
+		private void ShowWords()
+		{
+			try
+			{
+				if (_players.Count == 0)
+				{
+					throw new ArgumentException("No players");
+				}
+				foreach (var pl in _players)
+				{
+					WriteLineInfo($"Words by {pl.Name}:");
+					if (pl.Words.Count == 0)
+					{
+						WriteLineInfo("\tnothing");
+					}
+					else
+					{
+						foreach (var word in pl.Words)
+						{
+							WriteLineInfo($"\t{word}");
+						}
+					}
+				}
+			}
+			catch (ArgumentException ex)
+			{
+				WriteLineError(ex.Message);
+			}
+		}
+
+		private void TotalScore()
+		{
+			try
+			{
+				var playersResultsInGame = (_players.Count != 0) ?
+					_players.Select(t => new SortedCollection() { Name = t.Name, Score = t.Score}) :
+					new Collection<SortedCollection>();
+				var playersResultsInData = _storageService.GetLoadedData();
+
+				IEnumerable<SortedCollection> list = new Collection<SortedCollection>();
+				if (playersResultsInGame.Count() != 0 && playersResultsInData != null)
+				{
+					list = playersResultsInData.Select(t => new SortedCollection { Name = t.UserName, Score = t.Score }).Union(playersResultsInGame);
+				}
+				else if (playersResultsInData != null)
+				{
+					list = playersResultsInData.Select(t => new SortedCollection { Name = t.UserName, Score = t.Score });
+				}
+				else
+				{
+					list = playersResultsInGame;
+				}
+
+				WriteLineInfo("Total score");
+				if (list.Count() == 0)
+				{
+					WriteLineInfo("nothing");
+					throw new ArgumentException("Data is empty or no players");
+				}
+				else
+				{
+					//TODO
+					foreach (var res in list.Distinct().OrderByDescending(t => t.Score))
+					{
+						WriteLineInfo($"{res.Name}\t-> {res.Score}");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				WriteLineError(ex.Message);
+			}
+		}
+
+		private bool HandleRound(Player player)
+		{
+			bool success = false;
+			for (int attempt = 0; attempt < _maxPlayerAttempts; attempt++)
+			{
+				WriteLine($"{player.Name} [{attempt + 1}/{_maxPlayerAttempts}]");
+				var input = ReadLine(Formating.Line);
+
+				try
+                {
+					if (input.StartsWith("/"))
+					{
+						ExecuteOnCommand(input);
+						attempt--;
+					}
+					else if (BaseWordContainsAllChars(input))
+					{
+						player.Words.Add(input);
+						success = true;
+						break;
+					}
+					else
+					{
+						throw new ArgumentException("Failed. Try again");
+					}
+				}
+				catch (Exception ex)
+				{
+					if (ex.Message == "No such command")
+					{
+						attempt--;
+					}
+					WriteLineError(ex.Message);
+					if (attempt + 1 == _maxPlayerAttempts)
+                    {
+						player.inGame = false;
+						WriteLineInfo($"{player.Name} lost");
+					}
+				}
+			}
+			return success;
+		}
+
+		private void ExecuteOnCommand(string input)
+		{
+			if (_commands.ContainsKey(input))
+			{
+				_commands[input]();
+			}
+			else
+			{
+				throw new ArgumentException("No such command");
+			}
 		}
 
 		public bool PlayerIsExist(string compare)
@@ -301,12 +389,14 @@ namespace Pilot2.Services.Play
 				}
 				catch (Exception ex)
 				{
-					WriteError($"{ex.Message}");
+					WriteLineError(ex.Message);
 				}
 			}
 			return word;
 		}
 
-		public bool BaseWordContainsAllChars(string compare) => compare.All(t => BaseWord.Contains(t));
+		public bool SomeoneInGame() => _players.Any(t => t.inGame);
+		private string FindWinner() => _players.OrderByDescending(t => t.Score).First().Name;
+		private bool BaseWordContainsAllChars(string compare) => compare.All(t => BaseWord.Contains(t));
 	}
 }
